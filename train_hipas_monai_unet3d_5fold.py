@@ -317,8 +317,8 @@ def run_one_fold(fold_idx: int):
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=True,
-        persistent_workers=True,
-        prefetch_factor=4,
+        persistent_workers=False,
+        prefetch_factor=None,
         collate_fn=list_data_collate,
     )
     val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)

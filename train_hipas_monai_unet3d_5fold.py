@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 import numpy as np
 from tqdm import tqdm
-
+import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -301,6 +301,19 @@ def run_one_fold(fold_idx: int):
     train_ids, val_ids, test_ids = build_5fold_split(case_ids, fold_idx, seed=SEED)
 
     logger.info(f"device={device}")
+    wandb.init(
+        project="hipas_unet3d_5fold",
+        name=f"fold_{fold_idx}",
+        group="5fold_cv",
+        config={
+            "fold": fold_idx,
+            "lr": LR,
+            "batch_size": BATCH_SIZE,
+            "patch_size": PATCH_SIZE,
+            "epochs": EPOCHS,
+            "val_every": VAL_EVERY,
+        }
+    )
     logger.info(f"Total={len(case_ids)} | train={len(train_ids)} val={len(val_ids)} test={len(test_ids)}")
     logger.info(f"Test fixed ids (first/last): {test_ids[:3]} ... {test_ids[-3:]}")
 
@@ -371,7 +384,11 @@ def run_one_fold(fold_idx: int):
         running_loss /= max(1, len(train_loader))
         current_lr = float(opt.param_groups[0]["lr"])
         logger.info(f"[Fold {fold_idx}] Epoch {epoch} train_loss={running_loss:.6f} lr={current_lr:.6g}")
-
+        wandb.log({
+            "train_loss": running_loss,
+            "train_lr": current_lr,
+            "epoch": epoch,
+        })
         # scheduler after epoch
         scheduler.step()
 
@@ -383,7 +400,8 @@ def run_one_fold(fold_idx: int):
             model.eval()
             dice_overall.reset()
             dice_per_class.reset()
-            
+
+            # autocast 對 sliding window 推論有效；one_hot 我們會搬到 CPU 做
             with torch.inference_mode(), torch.amp.autocast("cuda" if device.type == "cuda" else "cpu"):
                 for batch in tqdm(val_loader, desc=f"Fold {fold_idx} | Epoch {epoch} [val]"):
                     img = batch["image"].to(device)              # (1,1,D,H,W)
@@ -399,26 +417,42 @@ def run_one_fold(fold_idx: int):
                         overlap=VAL_OVERLAP,
                     )  # (1,3,D,H,W)
 
-                    pred_cls = pred.argmax(dim=1)  # (B,D,H,W)
-                    pred_d = F.one_hot(pred_cls, num_classes=3).permute(0, 4, 1, 2, 3).float()
-                    lab_idx = lab.squeeze(1).long()
-                    lab_d = F.one_hot(lab_idx, num_classes=3).permute(0, 4, 1, 2, 3).float()
+                    # --- 1) 在 GPU 先做 argmax，拿到 class index ---
+                    pred_cls = pred.argmax(dim=1)  # (B,D,H,W) on GPU
+                    lab_idx = lab.squeeze(1).long()  # (B,D,H,W) on GPU
 
+                    # --- 2) ★搬到 CPU 再 one_hot（避免 VRAM 暴增）---
+                    pred_cls_cpu = pred_cls.detach().cpu()
+                    lab_idx_cpu  = lab_idx.detach().cpu()
+
+                    pred_d = F.one_hot(pred_cls_cpu, num_classes=3).permute(0, 4, 1, 2, 3).float()
+                    lab_d  = F.one_hot(lab_idx_cpu,  num_classes=3).permute(0, 4, 1, 2, 3).float()
+
+                    # --- 3) 用 CPU tensor 計算 dice ---
                     dice_overall(pred_d, lab_d)
                     dice_per_class(pred_d, lab_d)
-        
-            
+
+                    # --- 4) 釋放 GPU 大物件（保險）---
+                    del pred, pred_cls, lab_idx
+                    torch.cuda.empty_cache()
+
             val_mean = float(dice_overall.aggregate().item())
-            pc = dice_per_class.aggregate()              # (B,2) 累積
-            pc_mean = torch.nanmean(pc, dim=0)           # (2,)
+            pc = dice_per_class.aggregate()
+            pc_mean = torch.nanmean(pc, dim=0)
             artery = float(pc_mean[0].item())
-            vein = float(pc_mean[1].item())
+            vein   = float(pc_mean[1].item())
 
             logger.info(f"[Fold {fold_idx}] Epoch {epoch} VAL mean_dice={val_mean:.6f} artery={artery:.6f} vein={vein:.6f}")
-
+            wandb.log({
+                "val/mean_dice": val_mean,
+                "val/artery_dice": artery,
+                "val/vein_dice": vein,
+                "epoch": epoch,
+            })
             # save best on val mean
             if val_mean > best_dice:
                 best_dice = val_mean
+                wandb.log({"best_val_dice": best_dice})
                 best_epoch = epoch
                 ckpt_path = os.path.join(fold_dir, "best.pth")
                 torch.save(
@@ -482,6 +516,7 @@ def run_one_fold(fold_idx: int):
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
     logger.info(f"Fold {fold_idx} finished. best_dice={best_dice:.6f} best_epoch={best_epoch}")
+    wandb.finish()
     return summary
 
 

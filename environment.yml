@@ -1,0 +1,6 @@
+name: transunet_cuda128
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+prefix: C:\Users\USER\anaconda3\envs\transunet_cuda128

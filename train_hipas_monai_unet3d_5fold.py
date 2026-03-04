@@ -33,7 +33,7 @@ from monai.inferers import sliding_window_inference
 from monai.utils import set_determinism
 
 # ====================== 你要改的設定 ======================
-DATA_ROOT = "~/Datasets/HiPaS_original"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
+DATA_ROOT = "/home/e118/Datasets/HiPaS_original"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
 SEED = 42
 
 # HU normalize

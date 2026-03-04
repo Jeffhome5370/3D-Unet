@@ -45,7 +45,7 @@ PATCH_SIZE = (64, 192, 192)      # (D, H, W)
 PATCH_SAMPLES_PER_CASE = 4       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
 
 # validation sliding window
-VAL_ROI_SIZE = (96, 192, 192)
+VAL_ROI_SIZE = (64,128,128)
 VAL_OVERLAP = 0.25
 
 # 训练超参
@@ -321,7 +321,7 @@ def run_one_fold(fold_idx: int):
         prefetch_factor=None,
         collate_fn=list_data_collate,
     )
-    val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0, pin_memory=False)
 
     model = UNet(
         spatial_dims=3,

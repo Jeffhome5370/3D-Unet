@@ -56,7 +56,7 @@ WEIGHT_DECAY = 1e-5
 
 # loader
 BATCH_SIZE = 4
-NUM_WORKERS = 4
+NUM_WORKERS = 0
 
 # cache（RAM 夠可調高）
 CACHE_RATE_TRAIN = 0.2

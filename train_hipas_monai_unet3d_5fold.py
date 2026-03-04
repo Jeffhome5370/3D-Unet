@@ -33,7 +33,7 @@ from monai.inferers import sliding_window_inference
 from monai.utils import set_determinism
 
 # ====================== 你要改的設定 ======================
-DATA_ROOT = r"C:/碩士班/HIPAS資料集"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
+DATA_ROOT = "~/Datasets/HiPaS_original"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
 SEED = 42
 
 # HU normalize
@@ -115,9 +115,9 @@ def load_npz_data(path: str) -> np.ndarray:
 
 
 def list_case_ids(data_root: str):
-    ct_files = sorted(glob.glob(os.path.join(data_root, "ct_scan(.npz)", "*.npz")))
+    ct_files = sorted(glob.glob(os.path.join(data_root, "ct_scan", "*.npz")))
     if len(ct_files) == 0:
-        raise FileNotFoundError(f"找不到 ct_scan(.npz)/*.npz：{os.path.join(data_root,'ct_scan(.npz)')}")
+        raise FileNotFoundError(f"找不到 ct_scan/*.npz：{os.path.join(data_root,'ct_scan')}")
     case_ids = [os.path.splitext(os.path.basename(p))[0] for p in ct_files]
     return case_ids
 
@@ -184,9 +184,9 @@ class HiPaSNPZDataset:
 
     def __getitem__(self, idx):
         cid = self.case_ids[idx]
-        ct_path = os.path.join(self.data_root, "ct_scan(.npz)", f"{cid}.npz")
-        a_path = os.path.join(self.data_root, "artery(.npz)", "artery", f"{cid}.npz")
-        v_path = os.path.join(self.data_root, "vein(.npz)", "vein", f"{cid}.npz")
+        ct_path = os.path.join(self.data_root, "ct_scan", f"{cid}.npz")
+        a_path = os.path.join(self.data_root, "annotation", "artery", f"{cid}.npz")
+        v_path = os.path.join(self.data_root, "annotation", "vein", f"{cid}.npz")
 
         ct = load_npz_data(ct_path)      # (H,W,D) e.g. (512,512,258)
         artery = load_npz_data(a_path)   # (H,W,D) 0/1

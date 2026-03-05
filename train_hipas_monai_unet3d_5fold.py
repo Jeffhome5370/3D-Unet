@@ -331,9 +331,6 @@ def run_one_fold(fold_idx: int):
         num_workers=NUM_WORKERS,
         pin_memory=True,
         persistent_workers=False,
-<<<<<<< HEAD
-        prefetch_factor=2,
-=======
         prefetch_factor=1,
         collate_fn=list_data_collate,
     )

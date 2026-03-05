@@ -605,12 +605,13 @@ def run_one_fold(fold_idx: int):
 def main():
     os.makedirs(CKPT_ROOT, exist_ok=True)
     os.makedirs(LOG_ROOT, exist_ok=True)
-    fold_dir = os.path.join(CKPT_ROOT, f"fold{fold_idx}")
+    
 
     summaries = []
     folds = list(range(N_FOLDS)) if RUN_ALL_FOLDS else [SINGLE_FOLD]
 
     for fold_idx in folds:
+        fold_dir = os.path.join(CKPT_ROOT, f"fold{fold_idx}")
         done_flag = os.path.join(fold_dir, "DONE")
 
         if os.path.exists(done_flag):

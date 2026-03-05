@@ -331,7 +331,11 @@ def run_one_fold(fold_idx: int):
         num_workers=NUM_WORKERS,
         pin_memory=True,
         persistent_workers=False,
+<<<<<<< HEAD
         prefetch_factor=2,
+=======
+        prefetch_factor=1,
+>>>>>>> master
         collate_fn=list_data_collate,
     )
     val_loader = DataLoader(val_ds, batch_size=1, shuffle=False, num_workers=0, pin_memory=False)

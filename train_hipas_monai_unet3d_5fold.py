@@ -374,7 +374,7 @@ def run_one_fold(fold_idx: int):
     header = ["fold", "epoch", "lr", "train_loss", "val_mean_dice", "val_artery_dice", "val_vein_dice", "best_dice_so_far"]
 
     logger.info(f"Start training fold={fold_idx}. ckpt_dir={fold_dir}")
-    
+    stop_training = False
     for epoch in range(start_epoch, EPOCHS + 1):
         model.train()
         running_loss = 0.0
@@ -510,6 +510,7 @@ def run_one_fold(fold_idx: int):
             # save best on val mean
             if val_mean > best_dice:
                 count = 0
+                stop_training = False
                 best_dice = val_mean
                 wandb.log({"best_val_dice": best_dice})
                 best_epoch = epoch
@@ -557,11 +558,16 @@ def run_one_fold(fold_idx: int):
                 torch.save(checkpoint_dict, os.path.join(fold_dir, "best.pth"))
                 logger.info(f"✅ Saved best checkpoint: {ckpt_path} (best_dice={best_dice:.6f} @ epoch={best_epoch})")
             else:
+                stop_training = True
+
+            torch.cuda.empty_cache()
+            
+            if stop_training:
                 count += 1
                 hold = count * VAL_EVERY
                 if hold >= EARLY_STOP:
                     break
-            torch.cuda.empty_cache()
+            
 
         # per-epoch csv（val 沒跑就留空）
         write_epoch_csv_row(

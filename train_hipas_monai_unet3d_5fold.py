@@ -53,6 +53,8 @@ EPOCHS = 500
 VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
+EARLY_STOP = 80
+count = 0
 
 # loader
 BATCH_SIZE = 4
@@ -352,14 +354,28 @@ def run_one_fold(fold_idx: int):
     dice_overall = DiceMetric(include_background=False, reduction="mean")   # artery+vein 平均
     dice_per_class = DiceMetric(include_background=False, reduction="none")# (artery, vein)
 
+    last_ckpt = os.path.join(fold_dir, "last.pth")
+    start_epoch = 1
     best_dice = -1.0
+    if os.path.exists(last_ckpt):
+        print(f"Resuming from {last_ckpt}")
+
+        ckpt = torch.load(last_ckpt, map_location=device)
+        model.load_state_dict(ckpt["model_state"])
+        opt.load_state_dict(ckpt["optimizer_state"])
+        scheduler.load_state_dict(ckpt["scheduler_state"])
+        scaler.load_state_dict(ckpt["scaler_state"])
+        start_epoch = ckpt["epoch"] + 1
+        #best_dice = ckpt["best_dice"]
+
+    
     best_epoch = -1
     csv_path = os.path.join(fold_dir, "metrics.csv")
     header = ["fold", "epoch", "lr", "train_loss", "val_mean_dice", "val_artery_dice", "val_vein_dice", "best_dice_so_far"]
 
     logger.info(f"Start training fold={fold_idx}. ckpt_dir={fold_dir}")
     
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(start_epoch, EPOCHS + 1):
         model.train()
         running_loss = 0.0
 
@@ -391,6 +407,48 @@ def run_one_fold(fold_idx: int):
         })
         # scheduler after epoch
         scheduler.step()
+
+        checkpoint_dict = {
+            # ===== 訓練進度 =====
+            "fold": fold_idx,
+            "epoch": epoch,
+
+            # ===== 模型 =====
+            "model_state": model.state_dict(),
+
+            # ===== optimizer =====
+            "optimizer_state": opt.state_dict(),
+
+            # ===== LR scheduler =====
+            "scheduler_state": scheduler.state_dict(),
+
+            # ===== AMP scaler（mixed precision）=====
+            "scaler_state": scaler.state_dict(),
+
+            # ===== 指標 =====
+            "best_dice": best_dice,
+
+            # ===== 資料切分（確保 resume 不會亂 split）=====
+            "split": {
+                "train_ids": train_ids,
+                "val_ids": val_ids,
+                "test_ids": test_ids,
+            },
+
+            # ===== 訓練設定（方便未來復現）=====
+            "config": {
+                "LR": LR,
+                "WEIGHT_DECAY": WEIGHT_DECAY,
+                "BATCH_SIZE": BATCH_SIZE,
+                "PATCH_SIZE": PATCH_SIZE,
+                "VAL_ROI_SIZE": VAL_ROI_SIZE,
+                "VAL_OVERLAP": VAL_OVERLAP,
+                "EPOCHS": EPOCHS,
+                "VAL_EVERY": VAL_EVERY,
+                "SEED": SEED,
+            },
+        }
+        torch.save(checkpoint_dict, os.path.join(fold_dir, "last.pth"))
 
         val_mean = None
         artery = None
@@ -451,40 +509,58 @@ def run_one_fold(fold_idx: int):
             })
             # save best on val mean
             if val_mean > best_dice:
+                count = 0
                 best_dice = val_mean
                 wandb.log({"best_val_dice": best_dice})
                 best_epoch = epoch
                 ckpt_path = os.path.join(fold_dir, "best.pth")
-                torch.save(
-                    {
-                        "fold": fold_idx,
-                        "epoch": epoch,
-                        "model_state": model.state_dict(),
-                        "optimizer_state": opt.state_dict(),
-                        "scheduler_state": scheduler.state_dict(),
-                        "scaler_state": scaler.state_dict(),
-                        "best_dice": best_dice,
-                        "config": {
-                            "LR": LR,
-                            "WEIGHT_DECAY": WEIGHT_DECAY,
-                            "BATCH_SIZE": BATCH_SIZE,
-                            "PATCH_SIZE": PATCH_SIZE,
-                            "VAL_ROI_SIZE": VAL_ROI_SIZE,
-                            "VAL_OVERLAP": VAL_OVERLAP,
-                            "EPOCHS": EPOCHS,
-                            "VAL_EVERY": VAL_EVERY,
-                            "SEED": SEED,
-                        },
-                        "split": {
-                            "train_ids": train_ids,
-                            "val_ids": val_ids,
-                            "test_ids": test_ids,
-                        },
-                    },
-                    ckpt_path,
-                )
-                logger.info(f"✅ Saved best checkpoint: {ckpt_path} (best_dice={best_dice:.6f} @ epoch={best_epoch})")
+                checkpoint_dict = {
+                    # ===== 訓練進度 =====
+                    "fold": fold_idx,
+                    "epoch": epoch,
 
+                    # ===== 模型 =====
+                    "model_state": model.state_dict(),
+
+                    # ===== optimizer =====
+                    "optimizer_state": opt.state_dict(),
+
+                    # ===== LR scheduler =====
+                    "scheduler_state": scheduler.state_dict(),
+
+                    # ===== AMP scaler（mixed precision）=====
+                    "scaler_state": scaler.state_dict(),
+
+                    # ===== 指標 =====
+                    "best_dice": best_dice,
+
+                    # ===== 資料切分（確保 resume 不會亂 split）=====
+                    "split": {
+                        "train_ids": train_ids,
+                        "val_ids": val_ids,
+                        "test_ids": test_ids,
+                    },
+
+                    # ===== 訓練設定（方便未來復現）=====
+                    "config": {
+                        "LR": LR,
+                        "WEIGHT_DECAY": WEIGHT_DECAY,
+                        "BATCH_SIZE": BATCH_SIZE,
+                        "PATCH_SIZE": PATCH_SIZE,
+                        "VAL_ROI_SIZE": VAL_ROI_SIZE,
+                        "VAL_OVERLAP": VAL_OVERLAP,
+                        "EPOCHS": EPOCHS,
+                        "VAL_EVERY": VAL_EVERY,
+                        "SEED": SEED,
+                    },
+                }
+                torch.save(checkpoint_dict, os.path.join(fold_dir, "best.pth"))
+                logger.info(f"✅ Saved best checkpoint: {ckpt_path} (best_dice={best_dice:.6f} @ epoch={best_epoch})")
+            else:
+                count += 1
+                hold = count * VAL_EVERY
+                if hold >= EARLY_STOP:
+                    break
             torch.cuda.empty_cache()
 
         # per-epoch csv（val 沒跑就留空）
@@ -502,7 +578,13 @@ def run_one_fold(fold_idx: int):
             },
             header_order=header,
         )
-    
+        
+    done_flag = os.path.join(fold_dir, "DONE")
+
+    with open(done_flag, "w") as f:
+        f.write("training finished\n")
+
+    print(f"✅ Fold {fold_idx} marked as DONE")
     # fold summary
     summary = {
         "fold": fold_idx,
@@ -523,12 +605,19 @@ def run_one_fold(fold_idx: int):
 def main():
     os.makedirs(CKPT_ROOT, exist_ok=True)
     os.makedirs(LOG_ROOT, exist_ok=True)
+    fold_dir = os.path.join(CKPT_ROOT, f"fold{fold_idx}")
 
     summaries = []
     folds = list(range(N_FOLDS)) if RUN_ALL_FOLDS else [SINGLE_FOLD]
 
     for fold_idx in folds:
+        done_flag = os.path.join(fold_dir, "DONE")
+
+        if os.path.exists(done_flag):
+            print(f"Fold {fold_idx} already finished. Skip.")
+            continue
         summaries.append(run_one_fold(fold_idx))
+        
 
     # overall stats
     bests = [s["best_dice"] for s in summaries]

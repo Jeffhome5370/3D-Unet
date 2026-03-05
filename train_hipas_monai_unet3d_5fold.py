@@ -56,7 +56,7 @@ WEIGHT_DECAY = 1e-5
 
 # loader
 BATCH_SIZE = 4
-NUM_WORKERS = 2
+NUM_WORKERS = 1
 
 # cache（RAM 夠可調高）
 CACHE_RATE_TRAIN = 0.2
@@ -329,8 +329,8 @@ def run_one_fold(fold_idx: int):
         batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=NUM_WORKERS,
-        pin_memory=True,
-        persistent_workers=False,
+        pin_memory=False,
+        persistent_workers=True,
         prefetch_factor=1,
         collate_fn=list_data_collate,
     )

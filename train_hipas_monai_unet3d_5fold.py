@@ -60,7 +60,7 @@ NUM_WORKERS = 2
 
 # cache（RAM 夠可調高）
 CACHE_RATE_TRAIN = 0.2
-CACHE_RATE_VAL = 0.2
+CACHE_RATE_VAL = 0.1
 
 # 5-fold
 N_FOLDS = 5
@@ -330,7 +330,7 @@ def run_one_fold(fold_idx: int):
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=True,
-        persistent_workers=True,
+        persistent_workers=False,
         prefetch_factor=2,
         collate_fn=list_data_collate,
     )

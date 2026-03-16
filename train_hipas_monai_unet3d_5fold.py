@@ -59,7 +59,7 @@ EARLY_STOP = 40
 count = 0
 
 # loader
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 NUM_WORKERS = 1
 
 # cache（RAM 夠可調高）

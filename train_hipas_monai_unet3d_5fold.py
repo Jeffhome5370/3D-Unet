@@ -60,7 +60,7 @@ count = 0
 
 # loader
 BATCH_SIZE = 1
-NUM_WORKERS = 0
+NUM_WORKERS = 1
 
 # cache（RAM 夠可調高）
 CACHE_RATE_TRAIN = 0.0

@@ -4,7 +4,7 @@ import nibabel as nib
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
-
+import argparse
 from monai.data import CacheDataset, DataLoader
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
@@ -21,7 +21,7 @@ from train_hipas_monai_unet3d_5fold import (
 )
 
 # ===================================================
-FOLD_IDX = 0
+#FOLD_IDX = 0
 CKPT_ROOT = "./ckpt_hipas_unet3d_5fold"
 CT_NII_DIR = "/home/e118/Datasets/HiPaS_original/ct_scan(.nii.gz)"
 SAVE_NIFTI = False
@@ -30,6 +30,17 @@ CACHE_RATE_TEST = 0.2
 NUM_WORKERS = 1
 # ====================================================
 
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--fold",
+        type=int,
+        required=True,
+        help="Fold index (0~4)"
+    )
+
+    return parser.parse_args()
 
 def build_test_transform():
     return Compose([
@@ -99,6 +110,10 @@ def build_model(device: torch.device) -> UNet:
 
 
 def main():
+    args = get_args()
+    FOLD_IDX = args.fold
+    print(f"Running fold {FOLD_IDX}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Device:", device)
 

@@ -4,6 +4,7 @@ import random
 import csv
 import json
 import logging
+import argparse
 from datetime import datetime
 import numpy as np
 from tqdm import tqdm
@@ -66,7 +67,7 @@ CACHE_RATE_TRAIN = 0.2
 CACHE_RATE_VAL = 0.1
 
 # 5-fold
-N_FOLDS = 1
+N_FOLDS = 5
 TEST_FIXED_RANGE = (200, 250)  # 以排序後 index 計：case_ids[200:250] -> 201~250 (若檔名是001..250)
 RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
@@ -80,6 +81,17 @@ torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--fold",
+        type=int,
+        default=None,
+        help="fold index (0~4). If not set, run all folds."
+    )
+
+    return parser.parse_args()
 
 def setup_logger(log_dir: str, fold_idx: int) -> logging.Logger:
     os.makedirs(log_dir, exist_ok=True)
@@ -615,9 +627,16 @@ def main():
     
 
     summaries = []
-    folds = list(range(N_FOLDS)) if RUN_ALL_FOLDS else [SINGLE_FOLD]
+    args = get_args()
 
-    for fold_idx in folds:
+    if args.fold is not None:
+        target_folds = [args.fold]
+    else:
+        target_folds = list(range(N_FOLDS))
+
+    #folds = list(range(N_FOLDS)) if RUN_ALL_FOLDS else [SINGLE_FOLD]
+
+    for fold_idx in target_folds:
         fold_dir = os.path.join(CKPT_ROOT, f"fold{fold_idx}")
         done_flag = os.path.join(fold_dir, "DONE")
 

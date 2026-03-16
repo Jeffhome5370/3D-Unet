@@ -42,7 +42,7 @@ HU_CLIP_MIN = -1000
 HU_CLIP_MAX = 2000
 
 # patch 訓練設定
-PATCH_SIZE = (64, 192, 192)      # (D, H, W)
+PATCH_SIZE = (64, 128, 128)      # (D, H, W)
 PATCH_SAMPLES_PER_CASE = 10       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
 #sum(patch) = 160*PATCH_SAMPLES_PER_CASE
 
@@ -59,11 +59,11 @@ EARLY_STOP = 40
 count = 0
 
 # loader
-BATCH_SIZE = 2
-NUM_WORKERS = 1
+BATCH_SIZE = 1
+NUM_WORKERS = 0
 
 # cache（RAM 夠可調高）
-CACHE_RATE_TRAIN = 0.2
+CACHE_RATE_TRAIN = 0.0
 CACHE_RATE_VAL = 0.0
 
 # 5-fold

@@ -42,18 +42,19 @@ HU_CLIP_MAX = 2000
 
 # patch 訓練設定
 PATCH_SIZE = (64, 192, 192)      # (D, H, W)
-PATCH_SAMPLES_PER_CASE = 4       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
+PATCH_SAMPLES_PER_CASE = 10       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
+#sum(patch) = 160*PATCH_SAMPLES_PER_CASE
 
 # validation sliding window
 VAL_ROI_SIZE = (64,128,128)
 VAL_OVERLAP = 0.25
 
 # 训练超参
-EPOCHS = 500
+EPOCHS = 250
 VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
-EARLY_STOP = 80
+EARLY_STOP = 40
 count = 0
 
 # loader
@@ -65,14 +66,14 @@ CACHE_RATE_TRAIN = 0.2
 CACHE_RATE_VAL = 0.1
 
 # 5-fold
-N_FOLDS = 5
+N_FOLDS = 1
 TEST_FIXED_RANGE = (200, 250)  # 以排序後 index 計：case_ids[200:250] -> 201~250 (若檔名是001..250)
 RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold"
-LOG_ROOT = "./logs_hipas_unet3d_5fold"
+CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch"
+LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True

@@ -42,8 +42,8 @@ HU_CLIP_MIN = -1000
 HU_CLIP_MAX = 2000
 
 # patch 訓練設定
-PATCH_SIZE = (64, 128, 128)      # (D, H, W)
-PATCH_SAMPLES_PER_CASE = 10       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
+PATCH_SIZE = (24, 224, 224)      # (D, H, W)
+PATCH_SAMPLES_PER_CASE = 8       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
 #sum(patch) = 160*PATCH_SAMPLES_PER_CASE
 
 # validation sliding window
@@ -51,7 +51,7 @@ VAL_ROI_SIZE = (48,96,96)
 VAL_OVERLAP = 0.25
 
 # 训练超参
-EPOCHS = 250
+EPOCHS = 300
 VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
@@ -60,10 +60,10 @@ count = 0
 
 # loader
 BATCH_SIZE = 1
-NUM_WORKERS = 1
+NUM_WORKERS = 2
 
 # cache（RAM 夠可調高）
-CACHE_RATE_TRAIN = 0.0
+CACHE_RATE_TRAIN = 0.2
 CACHE_RATE_VAL = 0.0
 
 # 5-fold

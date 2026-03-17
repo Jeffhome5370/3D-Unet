@@ -42,7 +42,7 @@ HU_CLIP_MIN = -1000
 HU_CLIP_MAX = 2000
 
 # patch 訓練設定
-PATCH_SIZE = (24, 224, 224)      # (D, H, W)
+PATCH_SIZE = (32, 224, 224)      # (D, H, W)
 PATCH_SAMPLES_PER_CASE = 8       # 每個 case 抽幾個 patch（RandCropByLabelClassesd 的 num_samples）
 #sum(patch) = 160*PATCH_SAMPLES_PER_CASE
 
@@ -60,10 +60,10 @@ count = 0
 
 # loader
 BATCH_SIZE = 1
-NUM_WORKERS = 2
+NUM_WORKERS = 1
 
 # cache（RAM 夠可調高）
-CACHE_RATE_TRAIN = 0.2
+CACHE_RATE_TRAIN = 0.0
 CACHE_RATE_VAL = 0.0
 
 # 5-fold
@@ -73,8 +73,8 @@ RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps24*224*224"
-LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps24*224*224"
+CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps32*224*224"
+LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps32*224*224"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True
@@ -317,7 +317,7 @@ def run_one_fold(fold_idx: int):
 
     logger.info(f"device={device}")
     wandb.init(
-        project="hipas_unet3d_5fold_1600patch_ps24*224*224",
+        project="hipas_unet3d_5fold_1600patch_ps32*224*224",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={

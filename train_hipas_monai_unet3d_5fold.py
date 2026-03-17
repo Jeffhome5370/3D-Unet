@@ -73,8 +73,8 @@ RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch"
-LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch"
+CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps24*224*224"
+LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps24*224*224"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True
@@ -317,7 +317,7 @@ def run_one_fold(fold_idx: int):
 
     logger.info(f"device={device}")
     wandb.init(
-        project="hipas_unet3d_5fold_1600patch",
+        project="hipas_unet3d_5fold_1600patch_ps24*224*224",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={
@@ -325,6 +325,7 @@ def run_one_fold(fold_idx: int):
             "lr": LR,
             "batch_size": BATCH_SIZE,
             "patch_size": PATCH_SIZE,
+            "patch samples per case": PATCH_SAMPLES_PER_CASE,
             "epochs": EPOCHS,
             "val_every": VAL_EVERY,
         }

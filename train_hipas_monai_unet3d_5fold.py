@@ -240,7 +240,7 @@ def build_transforms():
         RandFlipd(keys=["image", "label"], spatial_axis=[0], prob=0.5),
         RandFlipd(keys=["image", "label"], spatial_axis=[1], prob=0.5),
         RandFlipd(keys=["image", "label"], spatial_axis=[2], prob=0.5),
-        RandRotate90d(keys=["image", "label"], prob=0.3, max_k=3),
+        # RandRotate90d(keys=["image", "label"], prob=0.3, max_k=3),
 
         RandCropByLabelClassesd(
             keys=["image", "label"],

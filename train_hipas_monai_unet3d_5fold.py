@@ -40,6 +40,22 @@ SEED = 42
 # HU normalize
 HU_CLIP_MIN = -1000
 HU_CLIP_MAX = 2000
+'''
+之後可嘗試
+HU_CLIP_MIN = -200
+HU_CLIP_MAX = 500
+'''
+# 物質	HU
+# air	-1000
+# lung	-900 ~ -500
+# fat	-120
+# water	0
+# muscle	40
+# blood	30 ~ 45
+# contrast vessel	150 ~ 350
+# bone	700 ~ 2000
+# metal	>3000
+
 
 # patch 訓練設定
 PATCH_SIZE = (32, 224, 224)      # (D, H, W)
@@ -51,11 +67,11 @@ VAL_ROI_SIZE = (48,96,96)
 VAL_OVERLAP = 0.25
 
 # 训练超参
-EPOCHS = 300
+EPOCHS = 500
 VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
-EARLY_STOP = 40
+EARLY_STOP = 80
 count = 0
 
 # loader

@@ -72,6 +72,7 @@ VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
 EARLY_STOP = 80
+POLY_LR_POWER = 0.8
 count = 0
 
 # loader
@@ -89,8 +90,8 @@ RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps32*224*224"
-LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps32*224*224"
+CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8"
+LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True
@@ -278,7 +279,7 @@ def build_transforms():
 
 
 def poly_lr(epoch):
-    power = 0.9
+    power = POLY_LR_POWER
     return (1 - epoch / EPOCHS) ** power
 
 
@@ -333,7 +334,7 @@ def run_one_fold(fold_idx: int):
 
     logger.info(f"device={device}")
     wandb.init(
-        project="hipas_unet3d_5fold_1600patch_ps32*224*224",
+        project="hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={

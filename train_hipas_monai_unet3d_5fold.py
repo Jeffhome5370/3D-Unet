@@ -67,12 +67,12 @@ VAL_ROI_SIZE = (48,96,96)
 VAL_OVERLAP = 0.25
 
 # 训练超参
-EPOCHS = 500
+EPOCHS = 300
 VAL_EVERY = 10
 LR = 2e-4
 WEIGHT_DECAY = 1e-5
 EARLY_STOP = 80
-POLY_LR_POWER = 0.8
+POLY_LR_POWER = 0.5
 count = 0
 
 # loader
@@ -90,8 +90,8 @@ RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8"
-LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8"
+CKPT_ROOT = "./ckpt_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.5"
+LOG_ROOT = "./logs_hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.5"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True
@@ -334,7 +334,7 @@ def run_one_fold(fold_idx: int):
 
     logger.info(f"device={device}")
     wandb.init(
-        project="hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.8",
+        project="hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.5",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={

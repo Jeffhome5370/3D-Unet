@@ -33,6 +33,7 @@ from monai.metrics import DiceMetric
 from monai.inferers import sliding_window_inference
 from monai.utils import set_determinism
 
+
 # ====================== 你要改的設定 ======================
 DATA_ROOT = "/home/e118/Datasets/HiPaS_original"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
 SEED = 42
@@ -106,6 +107,19 @@ def get_args():
         type=int,
         default=None,
         help="fold index (0~4). If not set, run all folds."
+    )
+    parser.add_argument(
+        "--only_analysis",
+        type=bool,
+        default=False,
+        help="True for complete patch foreground rate"
+    )
+
+    parser.add_argument(
+        "--max_batches",
+        type=int,
+        default=None,
+        help="only_analysis number"
     )
 
     return parser.parse_args()
@@ -340,6 +354,7 @@ def run_one_fold(fold_idx: int):
         config={
             "fold": fold_idx,
             "lr": LR,
+            "poly_lr_power":POLY_LR_POWER,
             "batch_size": BATCH_SIZE,
             "patch_size": PATCH_SIZE,
             "patch samples per case": PATCH_SAMPLES_PER_CASE,
@@ -638,6 +653,34 @@ def run_one_fold(fold_idx: int):
     wandb.finish()
     return summary
 
+def patch_analysis(fold_idx: int, max_batches: int):
+    from analyze_patch_distribution import analyze_patch_distribution
+    #max_batches = 500
+    set_determinism(SEED + fold_idx)
+
+    # list + split
+    case_ids = list_case_ids(DATA_ROOT)
+    train_ids, val_ids, test_ids = build_5fold_split(case_ids, fold_idx, seed=SEED)
+
+    train_tf, val_tf = build_transforms()
+    train_data = HiPaSNPZDataset(DATA_ROOT, train_ids, transform=train_tf)
+    val_data = HiPaSNPZDataset(DATA_ROOT, val_ids, transform=val_tf)
+
+    train_ds = CacheDataset(train_data, cache_rate=CACHE_RATE_TRAIN, num_workers=NUM_WORKERS)
+    #val_ds = CacheDataset(val_data, cache_rate=CACHE_RATE_VAL, num_workers=max(1, NUM_WORKERS // 2))
+
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=BATCH_SIZE,
+        shuffle=True,
+        num_workers=NUM_WORKERS,
+        pin_memory=False,
+        persistent_workers=False,
+        prefetch_factor=1,
+        collate_fn=list_data_collate,
+    )
+    analyze_patch_distribution(train_loader, max_batches=max_batches)
+
 
 def main():
     os.makedirs(CKPT_ROOT, exist_ok=True)
@@ -652,9 +695,15 @@ def main():
     else:
         target_folds = list(range(N_FOLDS))
 
+    
+
     #folds = list(range(N_FOLDS)) if RUN_ALL_FOLDS else [SINGLE_FOLD]
 
     for fold_idx in target_folds:
+        if args.only_analysis:
+            patch_analysis(fold_idx, args.max_batches)
+            print(f">>> Fold {fold_idx} analysis done.")
+            continue
         fold_dir = os.path.join(CKPT_ROOT, f"fold{fold_idx}")
         done_flag = os.path.join(fold_dir, "DONE")
 

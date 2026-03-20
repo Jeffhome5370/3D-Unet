@@ -277,7 +277,7 @@ def build_transforms():
             keys=["image", "label"],
             label_key="label",
             spatial_size=PATCH_SIZE,
-            ratios=[0.3, 1.0, 1.0],     # 0=bg,1=artery,2=vein
+            ratios=[0.5, 1.0, 1.0],     # 0=bg,1=artery,2=vein
             num_classes=3,
             num_samples=PATCH_SAMPLES_PER_CASE,
         ),

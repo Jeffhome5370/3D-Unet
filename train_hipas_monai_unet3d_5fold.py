@@ -35,17 +35,21 @@ from monai.utils import set_determinism
 
 
 # ====================== 你要改的設定 ======================
+
+ #========================實驗室與家裡修改========================================
 DATA_ROOT = "/home/e118/Datasets/HiPaS_original"  # 你的資料根目錄（包含 ct_scan(.npz)/ artery(.npz)/ vein(.npz)）
+#DATA_ROOT = r"C:/碩士班/HIPAS資料集"
+#==========================================================
 SEED = 42
 
 # HU normalize
-HU_CLIP_MIN = -1000
-HU_CLIP_MAX = 2000
-'''
-之後可嘗試
+# HU_CLIP_MIN = -1000
+# HU_CLIP_MAX = 2000
+
+#之後可嘗試
 HU_CLIP_MIN = -200
 HU_CLIP_MAX = 500
-'''
+
 # 物質	HU
 # air	-1000
 # lung	-900 ~ -500
@@ -91,8 +95,11 @@ RUN_ALL_FOLDS = True           # True: 跑 fold0~4；False: 只跑 SINGLE_FOLD
 SINGLE_FOLD = 0                # 0~4
 
 # 輸出
-CKPT_ROOT = "./ckpt_hipas_unet3d_5fold/1600patch_ps32*224*224_poly0.5_ratio[1.0,1.0,1.0]"
-LOG_ROOT = "./logs_hipas_unet3d_5fold/1600patch_ps32*224*224_poly0.5_ratio[1.0,1.0,1.0]"
+#========================實驗室與家裡修改========================================
+CKPT_ROOT = './ckpt_hipas_unet3d_5fold/ratio[1.0,1.0,1.0]_HU-200_500'
+LOG_ROOT = r"./logs_hipas_unet3d_5fold/ratio[1.0,1.0,1.0]_HU-200_500"
+# CKPT_ROOT = r'./ckpt_hipas_unet3d_5fold/ratio_1.0_1.0_1.0_train_dice_false'
+# LOG_ROOT = r"./logs_hipas_unet3d_5fold/ratio_1.0_1.0_1.0_train_dice_false"
 # =========================================================
 
 torch.backends.cudnn.benchmark = True
@@ -161,12 +168,19 @@ def load_npz_data(path: str) -> np.ndarray:
 
 
 def list_case_ids(data_root: str):
+    #========================實驗室與家裡修改========================================
     ct_files = sorted(glob.glob(os.path.join(data_root, "ct_scan", "*.npz")))
     if len(ct_files) == 0:
         raise FileNotFoundError(f"找不到 ct_scan/*.npz：{os.path.join(data_root,'ct_scan')}")
     case_ids = [os.path.splitext(os.path.basename(p))[0] for p in ct_files]
     return case_ids
 
+    # ct_files = sorted(glob.glob(os.path.join(data_root, "ct_scan(.npz)", "*.npz")))
+    # if len(ct_files) == 0:
+    #     raise FileNotFoundError(f"找不到 ct_scan(.npz)/*.npz：{os.path.join(data_root,'ct_scan(.npz)')}")
+    # case_ids = [os.path.splitext(os.path.basename(p))[0] for p in ct_files]
+    # return case_ids
+    #================================================================================
 
 def build_5fold_split(case_ids, fold_idx: int, seed: int = 42):
     """
@@ -230,9 +244,13 @@ class HiPaSNPZDataset:
 
     def __getitem__(self, idx):
         cid = self.case_ids[idx]
-        ct_path = os.path.join(self.data_root, "ct_scan", f"{cid}.npz")
-        a_path = os.path.join(self.data_root, "annotation", "artery", f"{cid}.npz")
-        v_path = os.path.join(self.data_root, "annotation", "vein", f"{cid}.npz")
+        # ct_path = os.path.join(self.data_root, "ct_scan", f"{cid}.npz")
+        # a_path = os.path.join(self.data_root, "annotation", "artery", f"{cid}.npz")
+        # v_path = os.path.join(self.data_root, "annotation", "vein", f"{cid}.npz")
+
+        ct_path = os.path.join(self.data_root, "ct_scan(.npz)", f"{cid}.npz")
+        a_path = os.path.join(self.data_root, "artery(.npz)", "artery", f"{cid}.npz")
+        v_path = os.path.join(self.data_root, "vein(.npz)", "vein", f"{cid}.npz")
 
         ct = load_npz_data(ct_path)      # (H,W,D) e.g. (512,512,258)
         artery = load_npz_data(a_path)   # (H,W,D) 0/1
@@ -314,7 +332,7 @@ def loss_fn(pred, target, device):
         target = target.argmax(dim=1, keepdim=True)
 
     class_weights = torch.tensor([0.1, 1.0, 1.0], device=device)
-    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=True)
+    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=False)
     ce_loss = nn.CrossEntropyLoss(weight=class_weights)
 
     loss_dice = dice_loss(pred, target)
@@ -347,8 +365,9 @@ def run_one_fold(fold_idx: int):
     train_ids, val_ids, test_ids = build_5fold_split(case_ids, fold_idx, seed=SEED)
 
     logger.info(f"device={device}")
+    #========================實驗室與家裡修改========================================
     wandb.init(
-        project="hipas_unet3d_5fold_1600patch_ps32*224*224_poly0.5_ratio[1.0,1.0,1.0]",
+        project="ratio[1.0,1.0,1.0]_HU-200_500",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={

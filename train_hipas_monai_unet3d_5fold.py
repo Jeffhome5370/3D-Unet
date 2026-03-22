@@ -335,7 +335,7 @@ def loss_fn(pred, target, device):
         target = target.argmax(dim=1, keepdim=True)
 
     class_weights = torch.tensor([0.1, 1.0, 1.0], device=device)
-    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=False)
+    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=True)
     ce_loss = nn.CrossEntropyLoss(weight=class_weights)
 
     loss_dice = dice_loss(pred, target)

@@ -43,12 +43,9 @@ DATA_ROOT = "/home/e118/Datasets/HiPaS_original"  # 你的資料根目錄（包�
 SEED = 42
 
 # HU normalize
-# HU_CLIP_MIN = -1000
-# HU_CLIP_MAX = 2000
+HU_CLIP_MIN = -1000
+HU_CLIP_MAX = 2000
 
-#之後可嘗試
-HU_CLIP_MIN = -200
-HU_CLIP_MAX = 500
 
 # 物質	HU
 # air	-1000
@@ -68,7 +65,7 @@ PATCH_SAMPLES_PER_CASE = 8       # 每個 case 抽幾個 patch（RandCropByLabel
 #sum(patch) = 160*PATCH_SAMPLES_PER_CASE
 
 # validation sliding window
-VAL_ROI_SIZE = (48,96,96)
+VAL_ROI_SIZE = (32, 224, 224)
 VAL_OVERLAP = 0.25
 
 # 训练超参
@@ -96,8 +93,8 @@ SINGLE_FOLD = 0                # 0~4
 
 # 輸出
 #========================實驗室與家裡修改========================================
-CKPT_ROOT = './ckpt_hipas_unet3d_5fold/ratio[1.0,1.0,1.0]_HU-200_500'
-LOG_ROOT = r"./logs_hipas_unet3d_5fold/ratio[1.0,1.0,1.0]_HU-200_500"
+CKPT_ROOT = './ckpt_hipas_unet3d_5fold/VAL_ROI_SIZE=(32, 224, 224)'
+LOG_ROOT = r"./logs_hipas_unet3d_5fold/VAL_ROI_SIZE=(32, 224, 224)"
 # CKPT_ROOT = r'./ckpt_hipas_unet3d_5fold/ratio_1.0_1.0_1.0_train_dice_false'
 # LOG_ROOT = r"./logs_hipas_unet3d_5fold/ratio_1.0_1.0_1.0_train_dice_false"
 # =========================================================
@@ -335,7 +332,7 @@ def loss_fn(pred, target, device):
         target = target.argmax(dim=1, keepdim=True)
 
     class_weights = torch.tensor([0.1, 1.0, 1.0], device=device)
-    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=True)
+    dice_loss = DiceLoss(to_onehot_y=True, softmax=True, include_background=False)
     ce_loss = nn.CrossEntropyLoss(weight=class_weights)
 
     loss_dice = dice_loss(pred, target)
@@ -370,7 +367,7 @@ def run_one_fold(fold_idx: int):
     logger.info(f"device={device}")
     #========================實驗室與家裡修改========================================
     wandb.init(
-        project="ratio[1.0,1.0,1.0]_HU-200_500",
+        project="VAL_ROI_SIZE=(32, 224, 224)",
         name=f"fold_{fold_idx}",
         group="5fold_cv",
         config={

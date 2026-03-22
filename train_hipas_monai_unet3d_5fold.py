@@ -244,13 +244,15 @@ class HiPaSNPZDataset:
 
     def __getitem__(self, idx):
         cid = self.case_ids[idx]
-        # ct_path = os.path.join(self.data_root, "ct_scan", f"{cid}.npz")
-        # a_path = os.path.join(self.data_root, "annotation", "artery", f"{cid}.npz")
-        # v_path = os.path.join(self.data_root, "annotation", "vein", f"{cid}.npz")
 
-        ct_path = os.path.join(self.data_root, "ct_scan(.npz)", f"{cid}.npz")
-        a_path = os.path.join(self.data_root, "artery(.npz)", "artery", f"{cid}.npz")
-        v_path = os.path.join(self.data_root, "vein(.npz)", "vein", f"{cid}.npz")
+        #========================實驗室與家裡修改========================================
+        ct_path = os.path.join(self.data_root, "ct_scan", f"{cid}.npz")
+        a_path = os.path.join(self.data_root, "annotation", "artery", f"{cid}.npz")
+        v_path = os.path.join(self.data_root, "annotation", "vein", f"{cid}.npz")
+
+        # ct_path = os.path.join(self.data_root, "ct_scan(.npz)", f"{cid}.npz")
+        # a_path = os.path.join(self.data_root, "artery(.npz)", "artery", f"{cid}.npz")
+        # v_path = os.path.join(self.data_root, "vein(.npz)", "vein", f"{cid}.npz")
 
         ct = load_npz_data(ct_path)      # (H,W,D) e.g. (512,512,258)
         artery = load_npz_data(a_path)   # (H,W,D) 0/1
